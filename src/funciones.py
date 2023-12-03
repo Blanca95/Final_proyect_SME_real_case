@@ -7,7 +7,7 @@ import warnings
 warnings.filterwarnings('ignore')
 from sqlalchemy import create_engine
 
-# Clase de limpieza, guardado de archivos y subida a MySQL
+# Clase para abrir, limpiar, guardar archivos y subirlos a MySQL
 
 class ExcelManager:
     """
@@ -40,6 +40,44 @@ class ExcelManager:
         self.excels  = self.extraerExcels(self.carpeta_origen)
         self.filtrarExcels(self.excels)
     
+
+    def test(self):
+        """
+        Función para filtrar y guardar los dataframes en un diccionario, según el tipo de data_frames: "lineas_ventas", "facturacion_familia" o "facturacion".
+
+        Args:
+            -: -.
+
+        Returns:
+            El diccionario con los dataframes cortados según cada key: "Stock", "Ventas", "Medicamentos" y "Empleados".
+        """   
+        for key, value in self.data_frames.items(): # key = tipo excel, value = dataframe limpio, filas y columnas
+            if key == "lineas_ventas":
+                empleados = self.obtenerEmpleadosLineasVentas(value)
+                self.data_frames_to_sql["Empleados"] = empleados
+            '''   
+            if key == "facturacion_familia":
+                empleados = self. ()
+                self.data_frames_to_sql["x"] = 
+
+            if key == "facturacion":
+                empleados = self. ()
+                self.data_frames_to_sql["y"] =     
+            '''  
+
+    def obtenerEmpleadosLineasVentas(self, data_frames):
+        """
+        Función para obtener unicamente los valores de la columna Vendedor.
+
+        Args:
+            data_frames: dataframe limpio con nombre 'lineas_ventas'.
+
+        Returns:
+            Dataframe que replesentará la tabla de MySQL llamada Empleados.
+        """      
+        return 
+
+
 
     def extraerExcels(self, carpeta):
         """
@@ -146,15 +184,11 @@ class ExcelManager:
 
     def exportarDfsToExcels(self, carpeta_destino):
         """
-        Para abrir un archivo xml, indicándole desde que ruta lo queremos
+        Función para guardar los dataframes limpios a excels, en una carpeta determinada.
 
         Args:
-            filepath: ruta del archivo que queremos abrir y leer
-
-        Returns:
-            El archivo xml leido en python
-        """
-    # Guardar a excel los df limpios    
+            carpeta_destino: ruta donde quiero guardar todos los archivos que he trabajado.
+        """  
         for nombreExcel, dfList in self.data_frames.items():
             # nombreExcel = lineas_ventas o facturacion o facturacion_familias
             for df in dfList:
@@ -164,10 +198,10 @@ class ExcelManager:
 
     def cortarDFsforMySQL(self, data_frame):
         """
-        Para abrir un archivo xml, indicándole desde que ruta lo queremos
+        Función para cortar los dataframes según 
 
         Args:
-            filepath: ruta del archivo que queremos abrir y leer
+            data_frame: ruta del archivo que queremos abrir y leer
 
         Returns:
             El archivo xml leido en python
