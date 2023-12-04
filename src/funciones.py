@@ -10,6 +10,7 @@ import configparser
 import mysql.connector as conn
 import pymysql
 
+
 # Clase para abrir, limpiar, guardar archivos y subirlos a MySQL
 
 class ExcelManager:
@@ -146,7 +147,7 @@ class ExcelManager:
         return
 
 
-    def exportarDfsToExcels(self, carpeta_destino):
+    def exportarDfsToExcels(self, carpeta_destino): 
         """
         Función para guardar los dataframes limpios a excels, en una carpeta determinada.
 
@@ -160,52 +161,28 @@ class ExcelManager:
                 df.to_excel(ruta_final, index=False, engine='openpyxl')
 
 
-    def cortarDFsforMySQL(self, data_frame):
+    def obtenerDFstoMySQL(self):
         """
-        Función para cortar los dataframes según 
-
-        Args:
-            data_frame: ruta del archivo que queremos abrir y leer
-
-        Returns:
-            
-        """
-    # Descargas e importaciones    
-        for key, value in self.data_frames.items():
-            pass
-        #for meterse en cada df de lineas ventas
-
-        
-        '''
+        Función para filtrar y guardar los dataframes en un diccionario, según el tipo de data_frames: "lineas_ventas", "facturacion_familia" o "facturacion".
         self.data_frames_to_sql = {
             "Ventas":None,
             "Medicamentos": None,
             "Empleados": None,
         }
-        '''
-
-
-    def obtenerDFtoDict(self):
-        """
-        Función para filtrar y guardar los dataframes en un diccionario, según el tipo de data_frames: "lineas_ventas", "facturacion_familia" o "facturacion".
-
-        Args:
-            -: -.
-
         Returns:
             El diccionario con los dataframes cortados según cada key: "Stock", "Ventas", "Medicamentos" y "Empleados".
         """   
         for key, value in self.data_frames.items(): # key = tipo excel, value = dataframe limpio, filas y columnas
             if key == "lineas_ventas":
-                empleados = self.obtenerEmpleadosLineasVentas(value)
-                self.data_frames_to_sql["Empleados"] = empleados
+                self.data_frames_to_sql["Empleados"] = self.obtenerEmpleadosLineasVentas(value)
+                self.data_frames_to_sql["Ventas"] = self.obtenerVentasLineasVentas(value)
+                self.data_frames_to_sql["Medicamentos"] = self.obtenerMedicamentosLineasVentas(value)
             '''   
             if key == "facturacion_familia":
                 empleados = self. ()
                 self.data_frames_to_sql["x"] = 
-.
 
-
+                
             if key == "facturacion":
                 empleados = self. ()
                 self.data_frames_to_sql["y"] =     
@@ -221,45 +198,51 @@ class ExcelManager:
         Returns:
             Dataframe que replesentará la tabla de MySQL llamada Empleados.
         """  
-        empleados = data_frames[0][['Vendedor']]
+        empleados = pd.concat(data_frames, axis=1)    
+        empleados = empleados['Vendedor']
         empleados = empleados.drop_duplicates()
         empleados = empleados.reset_index(drop=True)
         empleados.index += 1
-        empleados = pd.concat(data_frames, axis=1)    
         return empleados
     
+
     def obtenerMedicamentosLineasVentas(self, data_frames):
         """
-        Función para obtener los valores de las columnas Codigo', 'Denominacion'
+        Función para obtener los valores de las columnas 'Codigo', 'Denominacion' y 'Pvp'.
 
         Args:
             data_frames: lista de dataframe limpio con nombre 'lineas_ventas'.
 
         Returns:
-            Dataframe que replesentará la tabla de MySQL llamada Empleados.
+            Dataframe que replesentará la tabla de MySQL llamada Medicamentos.
         """ 
-        medicamentos = [['Codigo', 'Denominacion']]
+        medicamentos = pd.concat(data_frames, axis=1)  
+        medicamentos = medicamentos[['Codigo', 'Denominacion', 'Pvp']]
         medicamentos = medicamentos.drop_duplicates()
         medicamentos = medicamentos.reset_index(drop=True)
         medicamentos.index += 1
+        return medicamentos 
 
 
     def obtenerVentasLineasVentas(self, data_frames):       
         """
-        Función para obtener los valores de las columnas Codigo', 'Denominacion'
+        Función para obtener todos los valores del dataframe.
 
         Args:
             data_frames: lista de dataframe limpio con nombre 'lineas_ventas'.
 
         Returns:
-            Dataframe que replesentará la tabla de MySQL llamada Empleados.
-        """ 
-        [['Fecha', 'Hora', 'Organismo', 'Cantidad', 'Pvp', 'Pvp_facturado', 'Importe_bruto', 'Descuento', 'Importe_neto', 'Puesto', 'Existencias', 'Ticket']]
-     
+            Dataframe que replesentará la tabla de MySQL llamada Ventas.
+        """  
+        archivos = pd.read_excel(r'C:\Users\blanx\ironhack\Final_proyect_SME_real_case\Final_proyect_SME_real_case\data\data_clean\archivos.xlsx')
+        ventas = pd.concat(data_frames, axis=1)
+        ventas = pd.merge(ventas, archivos[['Código', 'Familia', 'Mínimo']], left_on='Codigo', right_on='Código', how='left')
+        ventas = ventas.drop(columns=['Código'])
+        return ventas
 
-    def exportarExceltoMySQl(self, excel):
+    def exportarMySQl(self):
         """
-        Para abrir un archivo xml, indicándole desde que ruta lo queremos
+        Función para crear el engine de conexión, crear la base de datos y subir los dataframes.
 
         Args:
             filepath: ruta del archivo que queremos abrir y leer
@@ -267,103 +250,67 @@ class ExcelManager:
         Returns:
             El archivo xml leido en python
         """
+        config = configparser.ConfigParser()
+        config.read('src/config.ini')
+        host = config['mysql']['host']
+        user = config['mysql']['user']
+        password = config['mysql']['password']
+
+        conexion = conn.connect(host=host, 
+                                user=user, 
+                                password=password)
+
+        cursor = conexion.cursor() 
+        cursor
+
+
+        c = cursor.execute
+
+        c('create database if not exists Farmacia;')
+
+        engine = create_engine("mysql+pymysql://{user}:{pw}@localhost/{db}"
+                            .format(user=user,
+                                    pw=password,
+                                    db="Farmacia"))
+
+        for key, value in self.data_frames_to_sql.items():
+            value.to_sql(name=key,      
+                    con=engine,          
+                    if_exists='append',  
+                    index=True)
+
+        # empleados.to_sql(name='empleados',      
+        #             con=engine,          
+        #             if_exists='append',  
+        #             index=True
+        #         )
+
+        # medicamentos.to_sql(name='medicamentos',      
+        #             con=engine,          
+        #             if_exists='append',  
+        #             index=True
+        #         )
+
+        # ventas.to_sql(name='ventas',      
+        #             con=engine,          
+        #             if_exists='append',  
+        #             index=True
+        #         )
     # Descargas e importaciones        
         pass 
 
+
+#------------------------------------------------
+
+
 if __name__ == "__main__":
-    print("test")
+    carpeta_origen = r"C:\Users\blanx\ironhack\Final_proyect_SME_real_case\Final_proyect_SME_real_case\data\data_raw"
+    excelManager = ExcelManager(carpeta_origen)
 
-#------------------------------------------------
+    # exportar excels entre medias
+    carpeta_destino_excel = r"C:\Users\blanx\ironhack\Final_proyect_SME_real_case\Final_proyect_SME_real_case\data\data_clean"
+    excelManager.exportarDfsToExcels(carpeta_destino_excel )
 
-
-#excel_manager = ExcelManager(r"C:\Users\blanx\ironhack\Final_proyect_SME_real_case\Final_proyect_SME_real_case\data\data_raw")
-
-#print(excel_manager.data_frames)
-#excel_manager.exportarDfsToExcels(r'C:\Users\blanx\ironhack\Final_proyect_SME_real_case\Final_proyect_SME_real_case\data\data_clean')
-
-
-#------------------------------------------------
-
-
-def cargar_a_sql(ruta_carpeta, patron_nombre, nombre_base_datos, nombre_tabla):
-    """
-    -
-
-    Args:
-        -: -
-
-    Returns:
-        -
-    """
-    # Conectar a la base de datos
-    engine = create_engine(f'sqlite:///{nombre_base_datos}')
-
-    # Iterar sobre los archivos en la carpeta
-    for archivo in os.listdir(ruta_carpeta):
-        if archivo.startswith(patron_nombre) and archivo.endswith('.xlsx'):
-            ruta_archivo = os.path.join(ruta_carpeta, archivo)
-
-            # Leer el archivo Excel
-            df = pd.read_excel(ruta_archivo)
-
-            # Limpieza de datos (añadir aquí el código de limpieza si es necesario)
-
-            # Cargar datos a la base de datos
-            df.to_sql(nombre_tabla, engine, if_exists='append', index=False)
-            print(f"Datos de {archivo} cargados a la tabla {nombre_tabla} en {nombre_base_datos}")
-
-    # Ruta de la carpeta que contiene los archivos Excel
-    carpeta_origen = '/ruta/donde/estan/tus/archivos'
-
-    # Patrón de nombre de archivos a considerar
-    patron_nombre_archivo = 'lineas_ventas'
-
-    # Nombre de la base de datos
-    nombre_db = 'tu_base_de_datos.db'
-
-    # Nombre de la tabla en la base de datos
-    nombre_tabla_sql = 'nombre_de_tabla_sql'
-
-    # Llamada a la función para cargar datos
-    cargar_a_sql(carpeta_origen, patron_nombre_archivo, nombre_db, nombre_tabla_sql)
-
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-    host = config['mysql']['host']
-    user = config['mysql']['user']
-    password = config['mysql']['password']
-
-    conexion = conn.connect(host=host, 
-                            user=user, 
-                            password=password)
-
-    cursor = conexion.cursor() 
-    cursor
-
-
-    c = cursor.execute
-
-    c('create database if not exists Farmacia;')
-
-    engine = create_engine("mysql+pymysql://{user}:{pw}@localhost/{db}"
-                        .format(user=user,
-                                pw=password,
-                                db="Farmacia"))
-
-    empleados.to_sql(name='empleados',      
-                con=engine,          
-                if_exists='append',  
-                index=True
-            )
-
-    medicamentos.to_sql(name='medicamentos',      
-                con=engine,          
-                if_exists='append',  
-                index=True
-            )
-
-    ventas.to_sql(name='ventas',      
-                con=engine,          
-                if_exists='append',  
-                index=True
-            )
+    
+    excelManager.obtenerDFstoMySQL()
+    excelManager.exportarMySQl()
