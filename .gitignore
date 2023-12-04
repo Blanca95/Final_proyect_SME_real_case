@@ -3,3 +3,4 @@ data_raw
 2.0.1
 __pycache__
 __init__.py
+config.ini
