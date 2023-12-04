@@ -59,7 +59,7 @@ class ExcelManager:
             if key == "facturacion_familia":
                 empleados = self. ()
                 self.data_frames_to_sql["x"] = 
-
+.
             if key == "facturacion":
                 empleados = self. ()
                 self.data_frames_to_sql["y"] =     
