@@ -8,6 +8,7 @@ warnings.filterwarnings('ignore')
 from sqlalchemy import create_engine
 import configparser
 import mysql.connector as conn
+import mysql
 import pymysql
 
 
@@ -18,6 +19,7 @@ class ExcelManager:
     Clase para limpiar excels, según el nombre del archivo y el tipo de datos que contiene internamente, además de transformar los documentos en dataframes para luego cortar las columnas según las necesidades de MySQL. 
     Guardar los dfs restantes y subir los archivos a MySQL.
     """
+    # -----------------------------------------------------------------------------------------# ETL #------------------------------------------------------------------------------------------------------------------
     def __init__(self):
         """
         Iniciador. Primera función necesaria de cualquier clase. 
@@ -164,7 +166,7 @@ class ExcelManager:
             if key == "lineas_ventas":
                 data_frames_to_sql["Empleados"] = self.obtenerEmpleadosLineasVentas(value)
                 data_frames_to_sql["Medicamentos"] = self.obtenerMedicamentosLineasVentas(value)
-                data_frames_to_sql["Ventas"] = self.obtenerVentasLineasVentas(value)
+                data_frames_to_sql["Ventas"] = self.obtenerVentasLineasVentas(value, data_frames_to_sql["Medicamentos"], data_frames_to_sql["Empleados"])
                 
         return data_frames_to_sql
            
@@ -181,10 +183,10 @@ class ExcelManager:
         """
         # IMPORTANTE: Rellenar primero empleados y medicamentos para que se rellenen los FKs.  
         empleados = pd.concat(data_frames, axis=1)    
-        empleados = empleados['Vendedor']
+        empleados = empleados[['Vendedor']]
         empleados = empleados.drop_duplicates()
-        empleados = empleados.reset_index(drop=True)
-        empleados.index += 1
+        empleados['index'] = range(1, len(empleados) + 1)
+
         return empleados
     
 
@@ -202,12 +204,12 @@ class ExcelManager:
         medicamentos = pd.concat(data_frames, axis=1)  
         medicamentos = medicamentos[['Codigo', 'Denominacion', 'Pvp']]
         medicamentos = medicamentos.drop_duplicates()
-        medicamentos = medicamentos.reset_index(drop=True)
-        medicamentos.index += 1
+        medicamentos['index'] = range(1, len(medicamentos) + 1)
+
         return medicamentos 
 
 
-    def obtenerVentasLineasVentas(self, data_frames):       
+    def obtenerVentasLineasVentas(self, data_frames, df_medicamentos, df_empleados):       
         """
         Función para obtener todos los valores del dataframe, además de añadir 2 columnas ['Familia', 'Mínimo'] de otro archivo excel.
 
@@ -219,8 +221,19 @@ class ExcelManager:
         """  
         archivos = pd.read_excel(r'C:\Users\blanx\ironhack\Final_proyect_SME_real_case\Final_proyect_SME_real_case\data\data_clean\archivos.xlsx')
         ventas = pd.concat(data_frames, axis=1)
+
+        ventas = pd.merge(ventas, df_medicamentos[["Codigo", "index"]], on='Codigo', how='left')
+        ventas.rename(columns={'index':'medicamentos_index'}, inplace=True)
+
+        ventas = pd.merge(ventas, df_empleados[["Vendedor", "index"]], on='Vendedor', how='left')
+        ventas.rename(columns={'index': 'empleados_index'}, inplace=True)
+        
+        # Metemos df archivos
         ventas = pd.merge(ventas, archivos[['Código', 'Familia', 'Mínimo']], left_on='Codigo', right_on='Código', how='left')
-        ventas = ventas.drop(columns=['Código'])
+   
+        ventas = ventas.drop(columns=['Código','Vendedor','Codigo'])
+        ventas.rename(columns={'Mínimo':'Ex_minimas'}, inplace=True)
+
         return ventas
 
 
@@ -247,12 +260,11 @@ class ExcelManager:
             El cursor de conexión.
         """
         host, user, password = self.configuracionMySQL()
-        conexion = conn.connect(host=host, 
+        self.conn = conn.connect(host=host, 
                                 user=user, 
                                 password=password)
-
-        cursor = conexion.cursor() 
-        return cursor
+        self.cursor = self.conn.cursor() 
+        return self.cursor
 
 
     def crearBDMySQL(self):
@@ -260,13 +272,20 @@ class ExcelManager:
         Función para crear la base de datos.
 
         """
-        cursor = self.conectarMySQL()
-        c = cursor.execute
-        c('create database if not exists Farmacia;')
 
-        with open(r"C:\Users\blanx\ironhack\Final_proyect_SME_real_case\Final_proyect_SME_real_case\src\create.sql", 'r') as sqlFile:
-            data = sqlFile.read()
-            c(data)
+        try:
+            self.conectarMySQL()
+            with open(r"C:\Users\blanx\ironhack\Final_proyect_SME_real_case\Final_proyect_SME_real_case\src\create.sql", 'r') as sqlFile:
+                data = sqlFile.read()
+                self.cursor.execute(data)
+        except mysql.connector.Error as err:
+            print(f"Error: {err}")
+        finally:
+            # Cierra el cursor y la conexión después de usarlos
+            if self.cursor:
+                self.cursor.close()
+            if self.conn:
+                self.conn.close()
 
 
     def crearEngineMySQL(self):
@@ -295,27 +314,24 @@ class ExcelManager:
 
         Returns:
         """
+        # IMPORTANTE: Rellenar primero empleados y medicamentos para que se rellenen los FKs.
         engine = self.crearEngineMySQL()
 
-        for key, value in data_frames_sql.items():
-            if 'empleados' in key:
-                value.to_sql(name='empleados',      
-                        con=engine,          
-                        if_exists='append',  
-                        index=True
-                    )
-            elif 'medicamentos' in key:
-                value.to_sql(name='medicamentos',      
-                        con=engine,          
-                        if_exists='append',  
-                        index=True
-                    )
-            else:
-                value.to_sql(name='ventas',      
-                        con=engine,          
-                        if_exists='append',  
-                        index=True
-                    )
+        data_frames_sql["Medicamentos"].to_sql(name='medicamentos',      
+            con=engine,          
+            if_exists='append',  
+            index=True
+        )
+        data_frames_sql["Empleados"].to_sql(name='empleados',      
+            con=engine,          
+            if_exists='append',  
+            index=True
+        )
+        data_frames_sql["Ventas"].to_sql(name='ventas',      
+            con=engine,          
+            if_exists='append',  
+            index=True
+        )
 
 
     def ejecutarSQL(self, query):
@@ -341,21 +357,21 @@ if __name__ == "__main__":
     excelManager = ExcelManager()
 
     # # excels
-    # carpeta_origen = r"C:\Users\blanx\ironhack\Final_proyect_SME_real_case\Final_proyect_SME_real_case\data\data_raw"
-    # excels  = excelManager.extraerExcels(carpeta_origen)
-    # excelManager.filtrarExcels(excels)
+    carpeta_origen = r"C:\Users\blanx\ironhack\Final_proyect_SME_real_case\Final_proyect_SME_real_case\data\data_raw"
+    excels  = excelManager.extraerExcels(carpeta_origen)
+    excelManager.filtrarExcels(excels)
 
     # # exportar excels entre medias
     # carpeta_destino = r"C:\Users\blanx\ironhack\Final_proyect_SME_real_case\Final_proyect_SME_real_case\data\data_clean"
     # excelManager.exportarDfsToExcels(carpeta_destino)
 
     #test bd
-    excelManager.crearBDMySQL()
+    #excelManager.crearBDMySQL()
 
 
 
-    #data_frames_sql = excelManager.obtenerDFstoMySQL()
-    #excelManager.volcarDatosMySQL(data_frames_sql)
+    data_frames_sql = excelManager.obtenerDFstoMySQL()
+    excelManager.volcarDatosMySQL(data_frames_sql)
 
 
 # 1º saber ejecutar querie desde python

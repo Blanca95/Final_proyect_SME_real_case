@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS `farmacia`.`ventas` (
   `Existencias` BIGINT NULL DEFAULT NULL,
   `Ticket` DOUBLE NULL DEFAULT NULL,
   `Familia` TEXT NULL DEFAULT NULL,
-  `Mínimo` DOUBLE NULL,
+  `Ex_minimas` DOUBLE NULL,
   `medicamentos_index` BIGINT NOT NULL,
   `empleados_index` BIGINT NOT NULL,
   INDEX `ix_Ventas_index` (`index` ASC) VISIBLE,
