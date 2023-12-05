@@ -12,7 +12,7 @@ import mysql
 import pymysql
 
 
-# Clase para abrir, limpiar, guardar archivos y subirlos a MySQL
+# Clase para abrir, limpiar, guardar archivos excel y/o dataframes y subirlos a MySQL
 
 class ExcelManager:
     """
@@ -30,8 +30,8 @@ class ExcelManager:
         """ 
         self.data_frames = {
                 "lineas_ventas": [],
-                "facturacion_familias": [],
-                "facturacion": [],
+                "facturacion_familias": [], # actualmente no se utiliza
+                "facturacion": [], # actualmente no se utiliza
         }
 
 
@@ -67,12 +67,12 @@ class ExcelManager:
                 data_frame._ruta_excel = rutaExcel
                 self.data_frames["lineas_ventas"].append(data_frame)
                           
-            if "facturacion_familia" in os.path.basename(rutaExcel):
+            if "facturacion_familia" in os.path.basename(rutaExcel): # actualmente no se utiliza
                 data_frame = self.facturacionFamiliaToDataFrame(rutaExcel)
                 data_frame._ruta_excel = rutaExcel
                 self.data_frames["facturacion_familias"].append(data_frame)
 
-            if "facturacion" in os.path.basename(rutaExcel):
+            if "facturacion" in os.path.basename(rutaExcel): # actualmente no se utiliza
                 data_frame = self.facturacionToDataFrame(rutaExcel)
                 data_frame._ruta_excel = rutaExcel
                 self.data_frames["facturacion"].append(data_frame)
@@ -112,7 +112,7 @@ class ExcelManager:
         return df
 
 
-    def facturacionFamiliaToDataFrame(self, excel):
+    def facturacionFamiliaToDataFrame(self, excel): # actualmente no se utiliza
         """
         Función para abrir un excel que contiene en su ruta "facturacion_familia", convertirlo en dataframe y limpiarlo a necesidad.
 
@@ -125,7 +125,7 @@ class ExcelManager:
         return 
 
 
-    def facturacionToDataFrame(self, excel):
+    def facturacionToDataFrame(self, excel): # actualmente no se utiliza
         """
         Función para abrir un excel que contiene en su ruta "facturacion", convertirlo en dataframe y limpiarlo a necesidad.
 
@@ -228,7 +228,7 @@ class ExcelManager:
         ventas = pd.merge(ventas, df_empleados[["Vendedor", "index"]], on='Vendedor', how='left')
         ventas.rename(columns={'index': 'empleados_index'}, inplace=True)
         
-        # Metemos df archivos
+        # Metemos df archivos de data_clean
         ventas = pd.merge(ventas, archivos[['Código', 'Familia', 'Mínimo']], left_on='Codigo', right_on='Código', how='left')
    
         ventas = ventas.drop(columns=['Código','Vendedor','Codigo', 'Denominacion', 'Pvp'])
@@ -347,9 +347,9 @@ class ExcelManager:
 
 
 
-consulta_sql = ''' 
-SELECT * FROM medicamentos
-'''
+#consulta_sql = ''' 
+#SELECT * FROM medicamentos
+#'''
 
 #------------------------------------------------
 
@@ -358,19 +358,17 @@ if __name__ == "__main__":
 
     excelManager = ExcelManager()
 
-    # # excels
+    # excels
     carpeta_origen = r"C:\Users\blanx\ironhack\Final_proyect_SME_real_case\Final_proyect_SME_real_case\data\data_raw"
     excels  = excelManager.extraerExcels(carpeta_origen)
     excelManager.filtrarExcels(excels)
 
-    # # exportar excels entre medias
-    # carpeta_destino = r"C:\Users\blanx\ironhack\Final_proyect_SME_real_case\Final_proyect_SME_real_case\data\data_clean"
-    # excelManager.exportarDfsToExcels(carpeta_destino)
+    # exportar excels entre medias
+    carpeta_destino = r"C:\Users\blanx\ironhack\Final_proyect_SME_real_case\Final_proyect_SME_real_case\data\data_clean"
+    excelManager.exportarDfsToExcels(carpeta_destino)
 
-    #test bd
+    # bd
     excelManager.crearBDMySQL()
-
-
 
     data_frames_sql = excelManager.obtenerDFstoMySQL()
     excelManager.volcarDatosMySQL(data_frames_sql)
