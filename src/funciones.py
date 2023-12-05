@@ -203,7 +203,7 @@ class ExcelManager:
         # IMPORTANTE: Rellenar primero empleados y medicamentos para que se rellenen los FKs.  
         medicamentos = pd.concat(data_frames, axis=1)  
         medicamentos = medicamentos[['Codigo', 'Denominacion', 'Pvp']]
-        medicamentos = medicamentos.drop_duplicates()
+        medicamentos = medicamentos.drop_duplicates(subset=['Codigo'], keep='first')
         medicamentos['index'] = range(1, len(medicamentos) + 1)
 
         return medicamentos 
@@ -231,8 +231,9 @@ class ExcelManager:
         # Metemos df archivos
         ventas = pd.merge(ventas, archivos[['Código', 'Familia', 'Mínimo']], left_on='Codigo', right_on='Código', how='left')
    
-        ventas = ventas.drop(columns=['Código','Vendedor','Codigo'])
+        ventas = ventas.drop(columns=['Código','Vendedor','Codigo', 'Denominacion', 'Pvp'])
         ventas.rename(columns={'Mínimo':'Ex_minimas'}, inplace=True)
+        ventas['Ticket'] = ventas['Ticket'].round(2)
 
         return ventas
 
@@ -320,12 +321,13 @@ class ExcelManager:
         data_frames_sql["Medicamentos"].to_sql(name='medicamentos',      
             con=engine,          
             if_exists='append',  
-            index=True
+            index=False,
+            
         )
         data_frames_sql["Empleados"].to_sql(name='empleados',      
             con=engine,          
             if_exists='append',  
-            index=True
+            index=False
         )
         data_frames_sql["Ventas"].to_sql(name='ventas',      
             con=engine,          
@@ -366,7 +368,7 @@ if __name__ == "__main__":
     # excelManager.exportarDfsToExcels(carpeta_destino)
 
     #test bd
-    #excelManager.crearBDMySQL()
+    excelManager.crearBDMySQL()
 
 
 
