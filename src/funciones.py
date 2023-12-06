@@ -88,6 +88,7 @@ class ExcelManager:
         Returns:
             El dataframe lineas_ventas creado limpio.
         """
+        print(f'Leyendo: {excel}')
         df = pd.read_excel(excel)
         df = df.rename(columns={
             df.columns[3]: 'operacion',
@@ -182,7 +183,8 @@ class ExcelManager:
             Dataframe que replesentará la tabla de MySQL llamada Empleados.
         """
         # IMPORTANTE: Rellenar primero empleados y medicamentos para que se rellenen los FKs.  
-        empleados = pd.concat(data_frames, axis=1)    
+        print('concatenando columnas Vendedor')
+        empleados = pd.concat(data_frames, axis=0)    
         empleados = empleados[['Vendedor']]
         empleados = empleados.drop_duplicates()
         empleados['index'] = range(1, len(empleados) + 1)
@@ -201,7 +203,8 @@ class ExcelManager:
             Dataframe que replesentará la tabla de MySQL llamada Medicamentos.
         """ 
         # IMPORTANTE: Rellenar primero empleados y medicamentos para que se rellenen los FKs.  
-        medicamentos = pd.concat(data_frames, axis=1)  
+        print('concatenando columnas Medicamentos')
+        medicamentos = pd.concat(data_frames, axis=0)  
         medicamentos = medicamentos[['Codigo', 'Denominacion', 'Pvp']]
         medicamentos = medicamentos.drop_duplicates(subset=['Codigo'], keep='first')
         medicamentos['index'] = range(1, len(medicamentos) + 1)
@@ -219,8 +222,9 @@ class ExcelManager:
         Returns:
             Dataframe que replesentará la tabla de MySQL llamada Ventas.
         """  
+        print('concatenando columnas Ventas')
         archivos = pd.read_excel(r'C:\Users\blanx\ironhack\Final_proyect_SME_real_case\Final_proyect_SME_real_case\data\data_clean\archivos.xlsx')
-        ventas = pd.concat(data_frames, axis=1)
+        ventas = pd.concat(data_frames, axis=0)
 
         ventas = pd.merge(ventas, df_medicamentos[["Codigo", "index"]], on='Codigo', how='left')
         ventas.rename(columns={'index':'medicamentos_index'}, inplace=True)
@@ -317,24 +321,26 @@ class ExcelManager:
         """
         # IMPORTANTE: Rellenar primero empleados y medicamentos para que se rellenen los FKs.
         engine = self.crearEngineMySQL()
-
+        print('volcando Medicamentos')
         data_frames_sql["Medicamentos"].to_sql(name='medicamentos',      
             con=engine,          
             if_exists='append',  
-            index=False,
-            
+            index=False, 
         )
+
+        print('volcando Empleados')
         data_frames_sql["Empleados"].to_sql(name='empleados',      
             con=engine,          
             if_exists='append',  
             index=False
         )
+        print('volcando Ventas')
         data_frames_sql["Ventas"].to_sql(name='ventas',      
             con=engine,          
             if_exists='append',  
             index=True
         )
-
+        print('Todo Volcado!')
 
     def ejecutarSQL(self, query):
         """
@@ -353,7 +359,7 @@ class ExcelManager:
 
 #------------------------------------------------
 
-
+''' 
 if __name__ == "__main__":
 
     excelManager = ExcelManager()
@@ -364,19 +370,13 @@ if __name__ == "__main__":
     excelManager.filtrarExcels(excels)
 
     # exportar excels entre medias
-    carpeta_destino = r"C:\Users\blanx\ironhack\Final_proyect_SME_real_case\Final_proyect_SME_real_case\data\data_clean"
-    excelManager.exportarDfsToExcels(carpeta_destino)
+    #carpeta_destino = r"C:\Users\blanx\ironhack\Final_proyect_SME_real_case\Final_proyect_SME_real_case\data\data_clean"
+    #excelManager.exportarDfsToExcels(carpeta_destino)
 
     # bd
     excelManager.crearBDMySQL()
 
     data_frames_sql = excelManager.obtenerDFstoMySQL()
     excelManager.volcarDatosMySQL(data_frames_sql)
-
-
-# 1º saber ejecutar querie desde python
-# 2º hacer 2 metodos
-    #- crear base de datos si no existe
-    #- volcar los datos test
-    #- añadir modificar datos
-# 3º subir todos los datos
+    
+'''
