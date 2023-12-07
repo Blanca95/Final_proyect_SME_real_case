@@ -30,43 +30,19 @@ Han solicitado tener dashboards para que los dueños puedan evaluar facilmente l
 
 #### 📚 Database ➡ MySQL
 
-
+![bd](images/ERD.jpg)
 
 #### 📊 Dashboards ➡ PowerBI
 
+![pwbi](images/powerbi2.jpg)
+![pwbi](images/powerbi3.jpg)
 
-
-
-
-![cruz](images/cruz.jpeg)
-![farmacia](images/farmacia.jpeg)
-
-## Links recursos
+## Recursos
 
 - ❤️ Archivos confidenciales de la empresa objetivo de estudio 💚
-
-## Links visualiaciones !!! creo que solo vale en tableau
-
-Worksheets:
-
--
--
--
--
--
--
--
-
-Dashboards:
-
--
--
--
 
 ## 🥼 Conclusiones 💊
 🩸💉
 👨‍⚕👩‍⚕🧑‍⚕⚕
-
-
 
 ![vestido](images/farmafestivo.jpeg)
