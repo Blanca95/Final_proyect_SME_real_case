@@ -314,10 +314,7 @@ class ExcelManager:
         Función para subir los dataframes con toda la información de la base de datos.
         
         Args:
-            engine:
-            data_frame:
-
-        Returns:
+            data_frames_sql: dataframes limpios que se van a exportar como tablas.
         """
         # IMPORTANTE: Rellenar primero empleados y medicamentos para que se rellenen los FKs.
         engine = self.crearEngineMySQL()
@@ -344,22 +341,14 @@ class ExcelManager:
 
     def ejecutarSQL(self, query):
         """
-        Función para crear el engine de conexión, crear la base de datos y subir los dataframes.
-        
+        Función para ejecutar queries.
+    
         """
         cursor = self.conectarMySQL()
         cursor.execute(query)
-        
-
-
-
-#consulta_sql = ''' 
-#SELECT * FROM medicamentos
-#'''
 
 #------------------------------------------------
 
-''' 
 if __name__ == "__main__":
 
     excelManager = ExcelManager()
@@ -370,13 +359,14 @@ if __name__ == "__main__":
     excelManager.filtrarExcels(excels)
 
     # exportar excels entre medias
-    #carpeta_destino = r"C:\Users\blanx\ironhack\Final_proyect_SME_real_case\Final_proyect_SME_real_case\data\data_clean"
-    #excelManager.exportarDfsToExcels(carpeta_destino)
+    carpeta_destino = r"C:\Users\blanx\ironhack\Final_proyect_SME_real_case\Final_proyect_SME_real_case\data\data_clean"
+    excelManager.exportarDfsToExcels(carpeta_destino)
 
     # bd
     excelManager.crearBDMySQL()
 
     data_frames_sql = excelManager.obtenerDFstoMySQL()
-    excelManager.volcarDatosMySQL(data_frames_sql)
-    
-'''
+    excelManager.volcarDatosMySQL(data_frames_sql) 
+
+
+
